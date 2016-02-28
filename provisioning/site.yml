@@ -1,0 +1,21 @@
+---
+- hosts: all
+  become_user: root
+  become: yes
+  roles:
+    - mount
+    - prep
+    - users
+
+
+#- hosts: db_server
+#  user: centos
+#  sudo: yes
+#  roles:
+#    - db-server
+
+#- hosts: ambari_server
+#  user: centos
+#  sudo: yes
+#  roles:
+#    - ambari-server

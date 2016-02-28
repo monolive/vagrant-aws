@@ -1,0 +1,81 @@
+
+# repos
+ambari_repo : http://public-repo-1.hortonworks.com/ambari/centos6/2.x/updates/2.2.0.0
+hdp_repo : http://public-repo-1.hortonworks.com/HDP/centos6/2.x/updates/2.3.2.0
+hdp_util_repo : http://public-repo-1.hortonworks.com/HDP-UTILS-1.1.0.20/repos/centos6
+
+# Keep same format as official repo
+hdp_stack: 2.3
+hdp_utils: 1.1.0.20
+
+cluster_name: HAWQ
+
+blueprint : kafka-hbase-storm-flume.json
+
+java_home : /usr/lib/jvm/java-1.8.0-openjdk.x86_64
+
+log_folder: /var/log/hadoop
+pid_folder: /var/run/hadoop
+
+## Create a list of devices to be formatted
+## mount point will be /hadoop/0,/hadoop/1
+devices: 
+ - /dev/xvdb
+ - /dev/xvdc
+
+# A common group shared by services.
+HADOOP_GROUP : hadoop
+HADOOP_GID : 2000
+
+#  HDFS service user.
+HDFS_USER : hdfs
+HDFS_UID : 2000
+
+#  YARN service user.
+YARN_USER : yarn
+YARN_UID : 2001
+
+#  MapReduce service user.
+MAPRED_USER : mapred
+MAPRED_UID : 2002
+
+#  Oozie service user.
+OOZIE_USER : oozie
+OOZIE_UID : 2003
+
+#  Hive service user.
+HIVE_USER : hive
+HIVE_UID : 2004
+
+#  HBase service user.
+HBASE_USER : hbase
+HBASE_UID : 2005
+
+#  ZooKeeper service user.
+ZOOKEEPER_USER : zookeeper
+ZOOKEEPER_UID : 2006
+
+# sqoop user
+SQOOP_USER : sqoop
+SQOOP_UID : 2008
+
+# ambari-qa user
+AMBARIQA_USER : ambari-qa
+AMBARIQA_UID : 2009
+
+# falcon user
+FALCON_USER : falcon
+FALCON_UID : 2010
+
+# hcat user
+HCAT_USER : hcat
+HCAT_UID : 2011
+
+# ams user
+AMS_USER : ams
+AMS_UID : 2012
+
+# tez user
+TEZ_USER : tez
+TEZ_UID : 2013
+

@@ -1,0 +1,12 @@
+---
+  - name: add ambari-repo
+    template: src=ambari.repo.j2 dest=/etc/yum.repos.d/ambari.repo
+
+  - name: install ambari
+    yum: name=ambari-agent state=present disable_gpg_check=true
+
+  - name: Add ambari server in conf file
+    lineinfile: dest=/etc/ambari-agent/conf/ambari-agent.ini regexp=^hostname= line=hostname={{ hostvars[groups['ambari_server'][0]]['ansible_fqdn'] }}
+
+  - name: start ambari-agent
+    service: name=ambari-agent state=started enabled=yes

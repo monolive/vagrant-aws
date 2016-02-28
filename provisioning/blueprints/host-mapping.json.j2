@@ -1,0 +1,50 @@
+{
+  "blueprint" : "{{ cluster_name }}",
+  "default_password" : "default",
+  "host_groups" :[
+    {
+      "name" : "host_group_1",
+      "hosts" : [
+        {
+          "fqdn" : "centrica01.centrica01.f4.internal.cloudapp.net"
+        }
+      ]
+    },
+    {
+      "name" : "host_group_2",
+      "hosts" : [
+        {
+          "fqdn" : "centrica03.centrica03.f8.internal.cloudapp.net"
+        }
+      ]
+    },
+    {
+      "name" : "host_group_3",
+      "hosts" : [
+        {
+          "fqdn" : "centrica02.centrica02.f4.internal.cloudapp.net"
+        }
+      ]
+    },
+    {
+      "name" : "host_group_4",
+      "hosts" : [
+        {
+          "fqdn" : "centrica04.centrica04.f9.internal.cloudapp.net"
+        },
+        {
+          "fqdn" : "centrica05.centrica05.f8.internal.cloudapp.net"
+        },
+        {
+          "fqdn" : "centrica06.centrica06.f5.internal.cloudapp.net"
+        },
+        {
+          "fqdn" : "centrica07.centrica07.f9.internal.cloudapp.net"
+        },
+        {
+          "fqdn" : "centrica08.centrica08.f7.internal.cloudapp.net"
+        }
+      ]
+    }
+  ]
+}

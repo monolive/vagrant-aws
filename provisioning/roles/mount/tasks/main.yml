@@ -1,0 +1,9 @@
+---
+  - name: Format filesystem
+    filesystem: fstype=xfs dev={{ item }}
+    with_items: "{{ devices }}"
+
+  - name: Mount disk
+    mount: name=/hadoop/{{ item.0 }} src={{ item.1 }} fstype=xfs opts=noatime state=mounted
+    with_indexed_items: "{{ devices }}"
+

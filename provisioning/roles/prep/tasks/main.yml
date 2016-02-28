@@ -1,0 +1,76 @@
+---
+  - name: install libselinux-python
+    yum: name=libselinux-python state=present
+
+
+# Create /etc/hosts
+# Having a multi step process has azure is trying to overwrite hostname quickly
+# - name: get fqdn 
+#   shell: hostname -f
+#   register: fqdn
+# - name: set fqdn in network file
+#   lineinfile: dest=/etc/sysconfig/network regexp=^HOSTNAME= line=HOSTNAME={{ item }}
+#   with_items: fqdn.stdout_lines
+#   register: done
+# - name: set fqdn 
+#   shell: hostname {{ item }}
+#   with_items: fqdn.stdout_lines
+#   when: done|changed
+# - name: re-generate fact
+#   action: setup
+#   when: done|changed
+# - name: copy hosts
+#   template: src=hosts.j2 dest=/etc/hosts
+
+# Disable hugepage
+# - name: disable hugepage
+#   shell: echo never > /sys/kernel/mm/redhat_transparent_hugepage/enabled
+# - name: disable hugepage permanently
+#   lineinfile: dest=/boot/grub/grub.conf
+#              backup=True
+#              backrefs=True
+#              state=present
+#              regexp='(^\s+kernel(\s+(?!transparent_hugepage=never)[\w=/\-\.]+)*)\s*$'
+#              line='\1 transparent_hugepage=never'
+
+# Disable selinux
+# - name: disable selinux 
+#   shell: setenforce 0
+#   ignore_errors: true
+# - name: switch off selinux permanently
+#   lineinfile: dest=/etc/selinux/config regexp=^SELINUX= line=SELINUX=disabled
+#   register: ambari_installed
+
+# Install and configure Java
+# - name: install java
+#   yum: name={{ item }} state=present
+#   with_items: 
+#     - java-1.7.0-openjdk
+#     - java-1.7.0-openjdk-devel
+
+# - name: configure java
+#   template: src=java.sh.j2 dest=/etc/profile.d/java.sh
+
+# Install & configure ntp
+# - name: install ntp server
+#   yum: name=ntp state=present
+# - name: switch on ntpd
+#   service: name=ntpd state=started enabled=on
+
+# Disable iptables
+# - name: switch off iptables
+#   service: name=iptables state=stopped enabled=off
+# - name: restart machine
+#   command: shutdown -r now "Ansible updates triggered"
+#   async: 0
+#   poll: 0
+#   ignore_errors: true
+#   when: ambari_installed|changed
+# - name: waiting for server to come back
+#   local_action: wait_for host={{ inventory_hostname }}
+#                 state=started
+#                 port=22
+#                 delay=15
+#                 timeout=600
+#   sudo: false
+#   when: ambari_installed|changed

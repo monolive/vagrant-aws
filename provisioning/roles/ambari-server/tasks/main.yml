@@ -1,0 +1,274 @@
+---
+# required for python-httplib2
+  - name: copy epel.repo
+    copy: src=epel.repo dest=/etc/yum.repos.d/epel.repo
+
+# install & configure ambari-server 
+  - name: install different packages Mysql related + curl
+    yum: name={{ item }} state=present
+    with_items:
+      - mysql-connector-java
+      - mysql
+      - MySQL-python
+      - python-httplib2
+      - curl
+    when: hostvars[groups['db_server'][0]]['db_flavour'] == "mysql"
+
+  - name: install ambari-server
+    yum: name=ambari-server state=present
+    register: ambari_installed
+  
+  - name: import ambari-server schema
+    mysql_db: name={{ hostvars[groups['db_server'][0]]['ambari_db'] }} state=import login_host={{ hostvars[groups['db_server'][0]]['ansible_fqdn'] }} login_user={{ hostvars[groups['db_server'][0]]['ambari_user'] }} login_password={{ hostvars[groups['db_server'][0]]['ambari_password'] }}  target=/var/lib/ambari-server/resources/Ambari-DDL-MySQL-CREATE.sql
+    when: ambari_installed|changed and hostvars[groups['db_server'][0]]['db_flavour'] == "mysql"
+
+  - name: configure ambari to use mysql
+    shell: /usr/sbin/ambari-server setup --jdbc-db=mysql --jdbc-driver=/usr/share/java/mysql-connector-java.jar
+    when: ambari_installed|changed and hostvars[groups['db_server'][0]]['db_flavour'] == "mysql"
+
+  - name: configure ambari server with mysql
+    shell: /usr/sbin/ambari-server setup -s --database=mysql --databasehost={{ hostvars[groups['db_server'][0]]['ansible_fqdn'] }} --databaseport=3306 --databasename={{ hostvars[groups['db_server'][0]]['ambari_db'] }}  --databaseusername={{ hostvars[groups['db_server'][0]]['ambari_user'] }}  --databasepassword={{ hostvars[groups['db_server'][0]]['ambari_password'] }}  -j {{ java_home }}
+    when: ambari_installed|changed and hostvars[groups['db_server'][0]]['db_flavour'] == "mysql"
+
+# Restart ambari server has status return rubbish value
+  - name: start ambari server
+    service: name=ambari-server state=restarted enabled=on
+    register: ambari_up
+
+  - name: check if ambari server is up
+    wait_for: state=started port=8080 delay=15
+    when: ambari_up|changed
+
+  - name: get register hosts
+    uri: 
+      url: http://{{ hostvars[groups['ambari_server'][0]]['ansible_fqdn'] }}:8080/api/v1/hosts
+      method: GET
+      user: admin
+      password: admin
+      HEADER_X-Requested-By: ambari
+      force_basic_auth: yes
+      return_content: yes
+
+  - name: change HDP repo URL
+    uri: 
+      url: http://{{ hostvars[groups['ambari_server'][0]]['ansible_fqdn'] }}:8080/api/v1/stacks/HDP/versions/{{ hdp_stack }}/operating_systems/redhat6/repositories/HDP-{{ hdp_stack }}
+      method: PUT
+      user: admin
+      password: admin
+      HEADER_X-Requested-By: ambari
+      body: "{{ lookup('template', '../templates/hdp_repo_body.json.j2') }}" # adding ../templates as a workaround for ansible bug
+      force_basic_auth: yes
+      return_content: yes
+      body_format: json
+ 
+  - name: change HDP-UTIL repo URL
+    uri: 
+      url: http://{{ hostvars[groups['ambari_server'][0]]['ansible_fqdn'] }}:8080/api/v1/stacks/HDP/versions/{{ hdp_stack }}/operating_systems/redhat6/repositories/HDP-UTILS-{{ hdp_utils }}
+      method: PUT
+      user: admin
+      password: admin
+      HEADER_X-Requested-By: ambari
+      body: "{{ lookup('template', '../templates/hdp_util_repo_body.json.j2') }}" # adding ../templates as a workaround for ansible bug
+      force_basic_auth: yes
+      return_content: yes
+      body_format: json
+ 
+  - name: copy blueprint
+    copy: src=../../../blueprints/{{ blueprint }} dest=/tmp/blueprint.json
+    register: blueprint
+
+  - name: copy host-mapping
+    template: src=../../../blueprints/host-mapping.json.j2 dest=/tmp/host-mapping.json
+    register: hostmap
+
+  - name: copy template script
+    template: src=register_launch.sh.j2 dest=/tmp/register_launch.sh mode=0755 
+    when: blueprint|changed or hostmap|changed
+
+  - name: register blueprint & hostmap
+    shell: /tmp/register_launch.sh
+    when: blueprint|changed or hostmap|changed
+# I've updated my uri module from the dev version as it was failing out when using 1.9.2 
+# https://raw.githubusercontent.com/ansible/ansible-modules-core/devel/network/basics/uri.py
+#  - name: register blueprint
+#    uri: 
+#      url: http://{{ hostvars[groups['ambari_server'][0]]['ansible_fqdn'] }}:8080/api/v1/blueprints/{{ cluster_name }}
+#      method: POST
+#      user: admin
+#      password: admin
+#      HEADER_X-Requested-By: ambari
+#      body: "{{ lookup('file', '../../../blueprints/hdp-2.3-hbase-noha.json') }}" 
+#      force_basic_auth: yes
+#      return_content: yes
+#      body_format: json
+#      status_code: 201
+
+#  - name: register host mapping
+#    uri: 
+#      url: http://{{ hostvars[groups['ambari_server'][0]]['ansible_fqdn'] }}:8080/api/v1/blueprints/{{ cluster_name }}
+#      method: POST
+#      user: admin
+#      password: admin
+#      HEADER_X-Requested-By: ambari
+#      body: "{{ lookup('file', '../../../blueprints/host-mapping.json') }}" 
+#      force_basic_auth: yes
+#      return_content: yes
+#      body_format: json
+#      status_code: 201
+
+# CHeck if installation is completed. It should check for 50min before failing
+  - name: copy script to check completed installation
+    template: src=monitor_installation.sh.j2 dest=/tmp/monitor_installation.sh mode=0755
+
+  - name: wait for installation to complete
+    shell: /tmp/monitor_installation.sh
+    register: complete_installation
+    until: complete_installation.stdout.find("INSTALL_DONE") != -1
+    retries: 30
+    delay: 60
+
+  - debug: var=complete_installation
+
+
+# Move back to curl as I need to parse output
+# - name: wait for installation to complete
+#   uri:
+#     url: http://{{ hostvars[groups['ambari_server'][0]]['ansible_fqdn'] }}:8080/api/v1/clusters/{{ cluster_name }}
+#     method: GET
+#     user: admin
+#     password: admin
+#     HEADER_X-Requested-By: ambari
+#     HEADER_Content-Type: "application/json"
+#     force_basic_auth: yes
+#     return_content: yes
+#   register: installation_completed
+#   until: installation_completed.content.find('INSTALLED')
+#   retries: 10
+#   delay: 300
+
+# Currently blueprint don't export - oozie pwd / oozie URL so re-adding them
+# TODO : Add a when condition so we are not overwriting values
+  - name: blueprint workaround - set oozie URL - oozie-site
+    shell: /var/lib/ambari-server/resources/scripts/configs.sh set {{ hostvars[groups['ambari_server'][0]]['ansible_fqdn'] }} {{ cluster_name }} oozie-site oozie.service.JPAService.jdbc.url jdbc:mysql://{{ hostvars[groups['db_server'][0]]['ansible_fqdn'] }}/oozie
+  - name: blueprint workaround - set oozie pwd DB string - oozie-site
+    shell: /var/lib/ambari-server/resources/scripts/configs.sh set {{ hostvars[groups['ambari_server'][0]]['ansible_fqdn'] }} {{ cluster_name }} oozie-site oozie.service.JPAService.jdbc.password {{ hostvars[groups['db_server'][0]]['oozie_password'] }}
+  - name: blueprint workaround - set oozie MySQL pwd in oozie-env
+    shell: /var/lib/ambari-server/resources/scripts/configs.sh set {{ hostvars[groups['ambari_server'][0]]['ansible_fqdn'] }} {{ cluster_name }} oozie-env oozie_existing_mysql_host {{ hostvars[groups['db_server'][0]]['ansible_fqdn'] }}
+
+# Restart oozie service
+# TODO : Add a when condition so we are not restarting if value have not been updated
+  - name: stop oozie service
+    shell: "curl -s -u admin:admin -i -H 'X-Requested-By: ambari' -X PUT -d '{\"RequestInfo\": {\"context\" :\"Stop OOZIE via REST\"}, \"Body\": {\"ServiceInfo\": {\"state\": \"INSTALLED\"}}}' http://{{ hostvars[groups['ambari_server'][0]]['ansible_fqdn'] }}:8080/api/v1/clusters/{{ cluster_name }}/services/OOZIE | awk -F'\\\"' '/href/ {print $4}'"
+    register: oozie_output
+
+  - name: wait for oozie to stop
+    uri:
+      url: "{{ item }}"
+      method: GET
+      user: admin
+      password: admin
+      HEADER_X-Requested-By: ambari
+      HEADER_Content-Type: "application/json"
+      force_basic_auth: yes
+      return_content: yes
+    register: oozie_stopped
+    until: oozie_stopped.content.find('COMPLETED')
+    retries: 10
+    delay: 10
+    when: oozie_output is defined
+    with_items: oozie_output.stdout_lines
+
+  - name: start oozie service
+    shell: "curl -s -u admin:admin -i -H 'X-Requested-By: ambari' -X PUT -d '{\"RequestInfo\": {\"context\" :\"Start OOZIE via REST\"}, \"Body\": {\"ServiceInfo\": {\"state\": \"STARTED\"}}}' http://{{ hostvars[groups['ambari_server'][0]]['ansible_fqdn'] }}:8080/api/v1/clusters/{{ cluster_name }}/services/OOZIE | awk -F'\\\"' '/href/ {print $4}'"
+    register: oozie_output
+
+# Moving away from uri module as I'm not able to use output to extract url
+# - name: stop oozie service
+#   uri: 
+#     url: http://{{ hostvars[groups['ambari_server'][0]]['ansible_fqdn'] }}:8080/api/v1/clusters/{{ cluster_name }}/services/OOZIE
+#     method: PUT
+#     user: admin
+#     password: admin
+#     HEADER_X-Requested-By: ambari
+#     HEADER_Content-Type: "application/json"
+#     body: '{"RequestInfo": {"context" :"Stop OOZIE via REST"}, "Body": {"ServiceInfo": {"state": "INSTALLED"}}}'
+#     force_basic_auth: yes
+#     return_content: yes
+#     body_format: json
+#     status_code: 202,200
+#   register: oozie_status
+
+# - name: check oozie status
+#   uri:
+#     url: http://{{ hostvars[groups['ambari_server'][0]]['ansible_fqdn'] }}:8080/api/v1/clusters/{{ cluster_name }}/requests/{{ item }}
+#     method: GET
+#     user: admin
+#     password: admin
+#     HEADER_X-Requested-By: ambari
+#     body: '{"RequestInfo": {"context" :"Start OOZIE via REST"}, "Body": {"ServiceInfo": {"state": "STARTED"}}}'
+#     force_basic_auth: yes
+#     return_content: yes
+#     body_format: json
+#     status_code: 202,200
+#   register: oozie_status
+#   with_items: getStatus.stdout_lines()
+
+# - name: start oozie service
+#   uri: 
+#     url: http://{{ hostvars[groups['ambari_server'][0]]['ansible_fqdn'] }}:8080/api/v1/clusters/{{ cluster_name }}/services/OOZIE
+#     method: PUT
+#     user: admin
+#     password: admin
+#     HEADER_X-Requested-By: ambari
+#     body: '{"RequestInfo": {"context" :"Start OOZIE via REST"}, "Body": {"ServiceInfo": {"state": "STARTED"}}}'
+#     force_basic_auth: yes
+#     return_content: yes
+#     body_format: json
+#     status_code: 202,200
+#   register: oozie_status
+
+# Currently blueprint don't export - hive pwd / hive URL so re-adding them
+# TODO : Add a when condition so we are not overwriting values
+  - name: blueprint workaround - set hive password hive-site
+    shell: /var/lib/ambari-server/resources/scripts/configs.sh set {{ hostvars[groups['ambari_server'][0]]['ansible_fqdn'] }} {{ cluster_name }} hive-site javax.jdo.option.ConnectionPassword {{ hostvars[groups['db_server'][0]]['hive_password'] }}
+  - name: blueprint workaround - set hive connection URL hive-site
+    shell: /var/lib/ambari-server/resources/scripts/configs.sh set {{ hostvars[groups['ambari_server'][0]]['ansible_fqdn'] }} {{ cluster_name }} hive-site javax.jdo.option.ConnectionURL jdbc:mysql://{{ hostvars[groups['db_server'][0]]['ansible_fqdn'] }}/hive?createDatabaseIfNotExist=true
+
+# Restart oozie service
+# TODO : Add a when condition so we are not restarting if value have not been updated
+  - name: stop oozie service
+    shell: "curl -s -u admin:admin -i -H 'X-Requested-By: ambari' -X PUT -d '{\"RequestInfo\": {\"context\" :\"Stop HIVE via REST\"}, \"Body\": {\"ServiceInfo\": {\"state\": \"INSTALLED\"}}}' http://{{ hostvars[groups['ambari_server'][0]]['ansible_fqdn'] }}:8080/api/v1/clusters/{{ cluster_name }}/services/HIVE | awk -F'\\\"' '/href/ {print $4}'"
+    register: hive_output
+
+  - name: wait for HIVE to stop
+    uri:
+      url: "{{ item }}"
+      method: GET
+      user: admin
+      password: admin
+      HEADER_X-Requested-By: ambari
+      HEADER_Content-Type: "application/json"
+      force_basic_auth: yes
+      return_content: yes
+    register: hive_stopped
+    until: hive_stopped.content.find('COMPLETED') 
+    retries: 10
+    delay: 10
+    when: hive_output is defined
+    with_items: hive_output.stdout_lines
+
+  - name: start HIVE service
+    shell: "curl -s -u admin:admin -i -H 'X-Requested-By: ambari' -X PUT -d '{\"RequestInfo\": {\"context\" :\"Start HIVE via REST\"}, \"Body\": {\"ServiceInfo\": {\"state\": \"STARTED\"}}}' http://{{ hostvars[groups['ambari_server'][0]]['ansible_fqdn'] }}:8080/api/v1/clusters/{{ cluster_name }}/services/HIVE | awk -F'\\\"' '/href/ {print $4}'"
+
+  - name: start all services
+    uri: 
+      url: http://{{ hostvars[groups['ambari_server'][0]]['ansible_fqdn'] }}:8080/api/v1/clusters/{{ cluster_name }}/services/
+      method: PUT
+      user: admin
+      password: admin
+      HEADER_X-Requested-By: ambari
+      body: '{"RequestInfo": {"context" :"Start all services via REST"}, "Body": {"ServiceInfo": {"state": "STARTED"}}}'
+      force_basic_auth: yes
+      return_content: yes
+      body_format: json
+      status_code: 202,200
