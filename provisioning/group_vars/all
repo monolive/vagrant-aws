@@ -8,7 +8,7 @@ hdp_util_repo : http://public-repo-1.hortonworks.com/HDP-UTILS-1.1.0.20/repos/ce
 hdp_stack: 2.3
 hdp_utils: 1.1.0.20
 
-cluster_name: HAWQ
+cluster_name: demo
 
 blueprint : kafka-hbase-storm-flume.json
 

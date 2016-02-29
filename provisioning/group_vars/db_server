@@ -1,7 +1,7 @@
 # same DB will be used across the overall env
 # supported DB backend - either mysql or postgresql
 # Currently only MySQL has been tested
-db_flavour: mysql
+db_flavour: mariadb
 
 # Ambari
 ambari_db: ambari

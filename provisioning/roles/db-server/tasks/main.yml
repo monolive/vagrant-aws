@@ -1,3 +1,8 @@
 ---
+  - debug : var=hostvars['datanode01']
+
   - include: mysql.yml
     when: db_flavour == "mysql"
+
+  - include: mariadb.yml
+    when: db_flavour == "mariadb"
