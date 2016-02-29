@@ -1,0 +1,6 @@
+[all]
+master01
+datanode01
+
+[db_server]
+datanode01
