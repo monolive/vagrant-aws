@@ -16,19 +16,23 @@
     mysql_db: name={{ oozie_db }} state=present
   - name: create & configure oozie user - server fqdn
     mysql_user: name={{ oozie_user }} password={{ oozie_password }} priv=*.*:ALL host={{ hostvars[groups['db_server'][0]]['ansible_fqdn'] }} state=present
+  - name: create & configure oozie user - server all
     mysql_user: name={{ oozie_user }} password={{ oozie_password }} priv=*.*:ALL host=% state=present
   - name: create & configure ambari DB
     mysql_db: name={{ ambari_db }} state=present
   - name: create & configure ambari user
     mysql_user: name={{ ambari_user }} password={{ ambari_password }} priv=*.*:ALL host={{ hostvars[groups['db_server'][0]]['ansible_fqdn'] }} state=present
+  - name: create & configure ambari user - server all
     mysql_user: name={{ ambari_user }} password={{ ambari_password }} priv=*.*:ALL host=% state=present
   - name: create & configure hive DB
     mysql_db: name={{ hive_db }} state=present
   - name: create & configure hive user - server fqdn
     mysql_user: name={{ hive_user }} password={{ hive_password }} priv=*.*:ALL host={{ hostvars[groups['db_server'][0]]['ansible_fqdn'] }} state=present
+  - name: create & configure hive user - server all
     mysql_user: name={{ hive_user }} password={{ hive_password }} priv=*.*:ALL host=% state=present
   - name: create & configure ranger DB
     mysql_db: name={{ ranger_db }} state=present
   - name: create & configure ranger user
     mysql_user: name={{ ranger_user }} password={{ ranger_password }} priv=*.*:ALL host={{ hostvars[groups['db_server'][0]]['ansible_fqdn'] }} state=present
+  - name: create & configure ranger user - server all
     mysql_user: name={{ ranger_user }} password={{ ranger_password }} priv=*.*:ALL host=% state=present

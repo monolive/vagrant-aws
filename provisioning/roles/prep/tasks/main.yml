@@ -2,28 +2,15 @@
   - name: install libselinux-python
     yum: name=libselinux-python state=present
 
-
-# Create /etc/hosts
-# Having a multi step process has azure is trying to overwrite hostname quickly
-# - name: get fqdn 
-#   shell: hostname -f
-#   register: fqdn
-# - name: set fqdn in network file
-#   lineinfile: dest=/etc/sysconfig/network regexp=^HOSTNAME= line=HOSTNAME={{ item }}
-#   with_items: fqdn.stdout_lines
-#   register: done
-# - name: set fqdn 
-#   shell: hostname {{ item }}
-#   with_items: fqdn.stdout_lines
-#   when: done|changed
-# - name: re-generate fact
-#   action: setup
-#   when: done|changed
-# - name: copy hosts
-#   template: src=hosts.j2 dest=/etc/hosts
-
 # Disable hugepage
-# - name: disable hugepage
+  - name: disable Hugepage in grub default
+    lineinfile: dest=/etc/sysconfig/grub
+      backup=True
+      backrefs=True
+      state=present
+      regexp='GRUB_CMDLINE_LINUX="(?!transparent_hugepage=never)([^"]*)"'
+      line='GRUB_CMDLINE_LINUX="transparent_hugepage=never \1"'
+#
 #   shell: echo never > /sys/kernel/mm/redhat_transparent_hugepage/enabled
 # - name: disable hugepage permanently
 #   lineinfile: dest=/boot/grub/grub.conf
