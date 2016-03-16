@@ -21,7 +21,7 @@
     when: grub_config.changed
 
 # Disable selinux
-  - name: disable selinux 
+  - name: disable selinux
     shell: setenforce 0
     ignore_errors: true
   - name: switch off selinux permanently
@@ -33,7 +33,7 @@
 # Install and configure Java
  - name: install java
    yum: name={{ item }} state=present
-   with_items: 
+   with_items:
      - java-1.8.0-openjdk
      - java-1.8.0-openjdk-devel
 
