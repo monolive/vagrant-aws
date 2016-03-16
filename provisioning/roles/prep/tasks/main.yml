@@ -2,62 +2,66 @@
   - name: install libselinux-python
     yum: name=libselinux-python state=present
 
-# Disable hugepage
+# Disable hugepage in grub
   - name: disable Hugepage in grub default
-    lineinfile: dest=/etc/sysconfig/grub
+    register: grub_config
+    lineinfile: dest=/etc/default/grub
       backup=True
       backrefs=True
       state=present
       regexp='GRUB_CMDLINE_LINUX="(?!transparent_hugepage=never)([^"]*)"'
       line='GRUB_CMDLINE_LINUX="transparent_hugepage=never \1"'
-#
-#   shell: echo never > /sys/kernel/mm/redhat_transparent_hugepage/enabled
-# - name: disable hugepage permanently
-#   lineinfile: dest=/boot/grub/grub.conf
-#              backup=True
-#              backrefs=True
-#              state=present
-#              regexp='(^\s+kernel(\s+(?!transparent_hugepage=never)[\w=/\-\.]+)*)\s*$'
-#              line='\1 transparent_hugepage=never'
+
+  - name: Write grub configuration file
+    command: grub2-mkconfig -o /boot/grub2/grub.cfg
+    when: grub_config.changed
+
+  - name: Write grub to MBR
+    command: grub2-install /dev/xvda
+    when: grub_config.changed
 
 # Disable selinux
-# - name: disable selinux 
-#   shell: setenforce 0
-#   ignore_errors: true
-# - name: switch off selinux permanently
-#   lineinfile: dest=/etc/selinux/config regexp=^SELINUX= line=SELINUX=disabled
-#   register: ambari_installed
+  - name: disable selinux 
+    shell: setenforce 0
+    ignore_errors: true
+  - name: switch off selinux permanently
+    lineinfile: dest=/etc/selinux/config regexp=^SELINUX= line=SELINUX=disabled
+      backup=True
+      backrefs=True
+    register: ambari_installed
 
 # Install and configure Java
-# - name: install java
-#   yum: name={{ item }} state=present
-#   with_items: 
-#     - java-1.7.0-openjdk
-#     - java-1.7.0-openjdk-devel
+ - name: install java
+   yum: name={{ item }} state=present
+   with_items: 
+     - java-1.8.0-openjdk
+     - java-1.8.0-openjdk-devel
 
-# - name: configure java
-#   template: src=java.sh.j2 dest=/etc/profile.d/java.sh
+ - name: configure java
+   template: src=java.sh.j2 dest=/etc/profile.d/java.sh
 
 # Install & configure ntp
-# - name: install ntp server
-#   yum: name=ntp state=present
-# - name: switch on ntpd
-#   service: name=ntpd state=started enabled=on
+ - name: install ntp server
+   yum: name=ntp state=present
+ - name: switch on ntpd
+   service: name=ntpd state=started enabled=on
 
 # Disable iptables
-# - name: switch off iptables
-#   service: name=iptables state=stopped enabled=off
-# - name: restart machine
-#   command: shutdown -r now "Ansible updates triggered"
-#   async: 0
-#   poll: 0
-#   ignore_errors: true
-#   when: ambari_installed|changed
-# - name: waiting for server to come back
-#   local_action: wait_for host={{ inventory_hostname }}
-#                 state=started
-#                 port=22
-#                 delay=15
-#                 timeout=600
-#   sudo: false
-#   when: ambari_installed|changed
+ - name: switch off iptables
+   service: name=iptables state=stopped enabled=off
+
+# Restart server and check if it's up
+ - name: restart machine
+   command: shutdown -r now "Ansible updates triggered"
+   async: 0
+   poll: 0
+   ignore_errors: true
+   when: ambari_installed|changed
+ - name: waiting for server to come back
+   local_action: wait_for host={{ inventory_hostname }}
+                 state=started
+                 port=22
+                 delay=15
+                 timeout=600
+   sudo: false
+   when: ambari_installed|changed
