@@ -31,37 +31,43 @@
     register: ambari_installed
 
 # Install and configure Java
- - name: install java
-   yum: name={{ item }} state=present
-   with_items:
-     - java-1.8.0-openjdk
-     - java-1.8.0-openjdk-devel
+  - name: install java
+    yum: name={{ item }} state=present
+    with_items:
+      - java-1.8.0-openjdk
+      - java-1.8.0-openjdk-devel
 
- - name: configure java
-   template: src=java.sh.j2 dest=/etc/profile.d/java.sh
+  - name: configure java
+    template: src=java.sh.j2 dest=/etc/profile.d/java.sh
 
 # Install & configure ntp
- - name: install ntp server
-   yum: name=ntp state=present
- - name: switch on ntpd
-   service: name=ntpd state=started enabled=on
+  - name: install ntp server
+    yum: name=ntp state=present
+  - name: switch on ntpd
+    service: name=ntpd state=started enabled=on
 
 # Disable iptables
- - name: switch off iptables
-   service: name=iptables state=stopped enabled=off
+  - name: Check if firewall is install
+    command: rpm -q firewalld
+    register: rpm_check
+    ignore_errors: true
+
+  - name: switch off firewall
+    service: name=firewalld state=stopped enabled=off
+    when: rpm_check.rc == 0
 
 # Restart server and check if it's up
- - name: restart machine
-   command: shutdown -r now "Ansible updates triggered"
-   async: 0
-   poll: 0
-   ignore_errors: true
-   when: ambari_installed|changed
- - name: waiting for server to come back
-   local_action: wait_for host={{ inventory_hostname }}
-                 state=started
-                 port=22
-                 delay=15
-                 timeout=600
-   sudo: false
-   when: ambari_installed|changed
+  - name: restart machine
+    command: shutdown -r now "Ansible updates triggered"
+    async: 0
+    poll: 0
+    ignore_errors: true
+    when: ambari_installed|changed
+  - name: waiting for server to come back
+    local_action: wait_for host={{ inventory_hostname }}
+      state=started
+      port=22
+      delay=15
+      timeout=600
+    become: false
+    when: ambari_installed|changed
