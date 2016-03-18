@@ -1,34 +1,16 @@
 ---
 # required for python-httplib2
-  - name: copy epel.repo
-    copy: src=epel.repo dest=/etc/yum.repos.d/epel.repo
-
-# install & configure ambari-server 
-  - name: install different packages Mysql related + curl
-    yum: name={{ item }} state=present
-    with_items:
-      - mysql-connector-java
-      - mysql
-      - MySQL-python
-      - python-httplib2
-      - curl
+#  - name: copy epel.repo
+#    copy: src=epel.repo dest=/etc/yum.repos.d/epel.repo
+  - include: mysql.yml
     when: hostvars[groups['db_server'][0]]['db_flavour'] == "mysql"
+
+  - include: mariadb.yml
+    when: hostvars[groups['db_server'][0]]['db_flavour'] == "mariadb"
 
   - name: install ambari-server
     yum: name=ambari-server state=present
     register: ambari_installed
-  
-  - name: import ambari-server schema
-    mysql_db: name={{ hostvars[groups['db_server'][0]]['ambari_db'] }} state=import login_host={{ hostvars[groups['db_server'][0]]['ansible_fqdn'] }} login_user={{ hostvars[groups['db_server'][0]]['ambari_user'] }} login_password={{ hostvars[groups['db_server'][0]]['ambari_password'] }}  target=/var/lib/ambari-server/resources/Ambari-DDL-MySQL-CREATE.sql
-    when: ambari_installed|changed and hostvars[groups['db_server'][0]]['db_flavour'] == "mysql"
-
-  - name: configure ambari to use mysql
-    shell: /usr/sbin/ambari-server setup --jdbc-db=mysql --jdbc-driver=/usr/share/java/mysql-connector-java.jar
-    when: ambari_installed|changed and hostvars[groups['db_server'][0]]['db_flavour'] == "mysql"
-
-  - name: configure ambari server with mysql
-    shell: /usr/sbin/ambari-server setup -s --database=mysql --databasehost={{ hostvars[groups['db_server'][0]]['ansible_fqdn'] }} --databaseport=3306 --databasename={{ hostvars[groups['db_server'][0]]['ambari_db'] }}  --databaseusername={{ hostvars[groups['db_server'][0]]['ambari_user'] }}  --databasepassword={{ hostvars[groups['db_server'][0]]['ambari_password'] }}  -j {{ java_home }}
-    when: ambari_installed|changed and hostvars[groups['db_server'][0]]['db_flavour'] == "mysql"
 
 # Restart ambari server has status return rubbish value
   - name: start ambari server
@@ -40,7 +22,7 @@
     when: ambari_up|changed
 
   - name: get register hosts
-    uri: 
+    uri:
       url: http://{{ hostvars[groups['ambari_server'][0]]['ansible_fqdn'] }}:8080/api/v1/hosts
       method: GET
       user: admin
