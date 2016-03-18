@@ -1,6 +1,9 @@
 # same DB will be used across the overall env
 # supported DB backend - either mysql or postgresql
-# Currently only MySQL has been tested
+# Currently only MariaDB has been tested on CentOS7
+# Currently only mysql has been tested on CentOS6
+
+
 db_flavour: mariadb
 
 # Ambari
