@@ -4,7 +4,7 @@
 groups = { 
     "master" => ["master01"],
     "db_server" => ["datanode01"],
-    "ambari_server" => ["master01"]
+    "ambari_server" => ["master01"],
     "all_groups:children" => ["master", "db_server"]
 }
 
