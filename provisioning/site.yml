@@ -7,15 +7,14 @@
     - prep
     - users
 
-
 - hosts: db_server
   become_user: root
   become: yes
   roles:
     - db-server
 
-#- hosts: ambari_server
-#  user: centos
-#  sudo: yes
-#  roles:
-#    - ambari-server
+- hosts: ambari_server
+  become_user: root
+  become: yes
+  roles:
+    - ambari-server
