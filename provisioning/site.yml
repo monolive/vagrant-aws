@@ -6,6 +6,7 @@
     - mount
     - prep
     - users
+    - ambari-agent
 
 - hosts: db_server
   become_user: root
