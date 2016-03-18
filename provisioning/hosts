@@ -1,6 +1,13 @@
+# This file is not used by Vagrant
+# The group defintion is done within Vagrantfile
+
 [all]
 master01
 datanode01
 
 [db_server]
 datanode01
+
+
+[ambari_server]
+master01
