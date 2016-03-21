@@ -2,13 +2,18 @@
 # vi: set ft=ruby :
 
 groups = { 
-    "master" => ["master01"],
-    "db_server" => ["datanode01"],
     "ambari_server" => ["master01"],
-    "all_groups:children" => ["master", "db_server"]
+    "master01" => ["master01"],
+    "master02" => ["master02"],
+    "master03" => ["master03"],
+    "db_server" => ["master03"],
+    "datanodes" => ["datanode01","datanode02","datanode03","datanode04"],
+    "all_groups:children" => ["master", "db_server","datanodes"]
 }
 
 aws_cfg = (JSON.parse(File.read("aws_instance.json")))
+
+index=0
 
 Vagrant.configure("2") do |config|
   config.vm.box = "dummy"
@@ -26,6 +31,7 @@ Vagrant.configure("2") do |config|
 
         # Spining up EC2 instances
         config2.vm.provider :aws do |ec2, override|
+          index += 1
           ec2.access_key_id = ENV['AWS_KEY']
           ec2.secret_access_key = ENV['AWS_SECRET']
           ec2.keypair_name = aws_cfg['keypair']
@@ -62,10 +68,14 @@ Vagrant.configure("2") do |config|
         end
       end
     end
-    config.vm.provision :ansible do |ansible|
-            ansible.playbook = "provisioning/site.yml"
-            ansible.sudo = true
-            ansible.limit = "all"
-            ansible.groups = groups
+    # Force ansible to run only once 
+    if index == 0
+      config.vm.provision :ansible do |ansible|
+        ansible.playbook = "provisioning/site.yml"
+        ansible.sudo = true
+        ansible.limit = "all"
+        ansible.groups = groups
+        index = 1
+      end
     end
 end
