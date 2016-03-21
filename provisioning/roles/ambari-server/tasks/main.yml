@@ -1,25 +1,17 @@
 ---
 # required for python-httplib2
-#  - name: copy epel.repo
-#    copy: src=epel.repo dest=/etc/yum.repos.d/epel.repo
+  - name: install epel.repo
+    yum: name=https://dl.fedoraproject.org/pub/epel/epel-release-latest-{{ ansible_distribution_major_version }}.noarch.rpm state=present
+
   - include: mysql.yml
     when: hostvars[groups['db_server'][0]]['db_flavour'] == "mysql"
 
   - include: mariadb.yml
     when: hostvars[groups['db_server'][0]]['db_flavour'] == "mariadb"
 
-  - name: install ambari-server
-    yum: name=ambari-server state=present
-    register: ambari_installed
+  - include: ambari_install.yml
 
-# Restart ambari server has status return rubbish value
-  - name: start ambari server
-    service: name=ambari-server state=restarted enabled=on
-    register: ambari_up
-
-  - name: check if ambari server is up
-    wait_for: state=started port=8080 delay=15
-    when: ambari_up|changed
+  - include: ambari_shell.yml
 
   - name: get register hosts
     uri:
@@ -31,9 +23,10 @@
       force_basic_auth: yes
       return_content: yes
 
+# using ansible_distribution_major_version to check if 6 or 7 in URL
   - name: change HDP repo URL
-    uri: 
-      url: http://{{ hostvars[groups['ambari_server'][0]]['ansible_fqdn'] }}:8080/api/v1/stacks/HDP/versions/{{ hdp_stack }}/operating_systems/redhat6/repositories/HDP-{{ hdp_stack }}
+    uri:
+      url: http://{{ hostvars[groups['ambari_server'][0]]['ansible_fqdn'] }}:8080/api/v1/stacks/HDP/versions/{{ hdp_stack }}/operating_systems/redhat{{ ansible_distribution_major_version }}/repositories/HDP-{{ hdp_stack }}
       method: PUT
       user: admin
       password: admin
@@ -42,10 +35,11 @@
       force_basic_auth: yes
       return_content: yes
       body_format: json
- 
+    when: ansible_os_family == "RedHat"
+
   - name: change HDP-UTIL repo URL
     uri: 
-      url: http://{{ hostvars[groups['ambari_server'][0]]['ansible_fqdn'] }}:8080/api/v1/stacks/HDP/versions/{{ hdp_stack }}/operating_systems/redhat6/repositories/HDP-UTILS-{{ hdp_utils }}
+      url: http://{{ hostvars[groups['ambari_server'][0]]['ansible_fqdn'] }}:8080/api/v1/stacks/HDP/versions/{{ hdp_stack }}/operating_systems/redhat{{ ansible_distribution_major_version }}/repositories/HDP-UTILS-{{ hdp_utils }}
       method: PUT
       user: admin
       password: admin
@@ -54,7 +48,8 @@
       force_basic_auth: yes
       return_content: yes
       body_format: json
- 
+    when: ansible_os_family == "RedHat"
+
   - name: copy blueprint
     copy: src=../../../blueprints/{{ blueprint }} dest=/tmp/blueprint.json
     register: blueprint
@@ -70,6 +65,7 @@
   - name: register blueprint & hostmap
     shell: /tmp/register_launch.sh
     when: blueprint|changed or hostmap|changed
+
 # I've updated my uri module from the dev version as it was failing out when using 1.9.2 
 # https://raw.githubusercontent.com/ansible/ansible-modules-core/devel/network/basics/uri.py
 #  - name: register blueprint
