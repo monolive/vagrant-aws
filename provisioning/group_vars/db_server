@@ -1,5 +1,5 @@
 # same DB will be used across the overall env
-# supported DB backend - either mysql or postgresql
+# supported DB backend - either mysql, mariadb or postgresql
 # Currently only MariaDB has been tested on CentOS7
 # Currently only mysql has been tested on CentOS6
 

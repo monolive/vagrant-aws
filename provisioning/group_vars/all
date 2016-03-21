@@ -12,14 +12,14 @@ cluster_name: demo
 
 blueprint : kafka-hbase-storm-flume.json
 
-java_home : /usr/lib/jvm/java-1.8.0-openjdk.x86_64
+java_home : /usr/lib/jvm/java-1.8.0-openjdk
 
 log_folder: /var/log/hadoop
 pid_folder: /var/run/hadoop
 
 ## Create a list of devices to be formatted
 ## mount point will be /hadoop/0,/hadoop/1
-devices: 
+devices:
  - /dev/xvdb
  - /dev/xvdc
 
