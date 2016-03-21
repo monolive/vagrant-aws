@@ -3,15 +3,17 @@
   - name: Create folder for install files
     file: path=/etc/ambari-server/install state=directory mode=0755
 
-# Install ambari shell 
+  - name: Install git if not present
+    yum: name=git state=latest
+
+# Install ambari shell
   - name: sync ambari-shell repo
     git: repo=https://github.com/sequenceiq/ambari-shell.git dest=/var/ambari-shell
 
-# Grab latest ambari-shell release 
+# Grab latest ambari-shell release
   - name: Download latest ambari-shell
-    command: /var/ambari-shell/latest-snap.sh 
-    creates: /tmp/ambari-shell.jar
+    command: /var/ambari-shell/latest-snap.sh creates=/tmp/ambari-shell.jar
 
 # Copy ambari-shell to ambari server
   - name: Copy ambari-shell jar file
-    copy: src=/tmp/ambari-shell.jar dest=/etc/ambari-server/install/ambari-shell.jar remote_src=True 
+    copy: src=/tmp/ambari-shell.jar dest=/etc/ambari-server/install/ambari-shell.jar remote_src=True

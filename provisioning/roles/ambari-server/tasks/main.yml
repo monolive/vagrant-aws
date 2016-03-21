@@ -9,9 +9,11 @@
   - include: mariadb.yml
     when: hostvars[groups['db_server'][0]]['db_flavour'] == "mariadb"
 
-  - include: ambari_install.yml
+  - name: install ambari server
+    include: ambari_install.yml
 
-  - include: ambari_shell.yml
+  - name: install ambari shell
+    include: ambari_shell.yml
 
   - name: get register hosts
     uri:
