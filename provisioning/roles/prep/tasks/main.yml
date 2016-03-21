@@ -63,6 +63,7 @@
     poll: 0
     ignore_errors: true
     when: ambari_installed|changed
+    
   - name: waiting for server to come back
     local_action: wait_for host={{ inventory_hostname }}
       state=started
