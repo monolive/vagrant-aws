@@ -14,13 +14,48 @@
             "instance_type": "m3.medium",
             "tags": {
                 "Name": "master01",
-                "Role": "master"
+                "Role": "master1"
+            }
+        },
+        "master02": {
+            "instance_type": "m3.medium",
+            "tags": {
+                "Name": "master02",
+                "Role": "master2"
+            }
+        },
+        "master03": {
+            "instance_type": "m3.medium",
+            "tags": {
+                "Name": "master03",
+                "Role": "master3"
             }
         },
         "datanode01": {
             "instance_type": "m3.medium",
             "tags": {
                 "Name": "datanode01",
+                "Role": "datanode"
+            }
+        },
+        "datanode02": {
+            "instance_type": "m3.medium",
+            "tags": {
+                "Name": "datanode02",
+                "Role": "datanode"
+            }
+        },
+        "datanode03": {
+            "instance_type": "m3.medium",
+            "tags": {
+                "Name": "datanode03",
+                "Role": "datanode"
+            }
+        },
+        "datanode04": {
+            "instance_type": "m3.medium",
+            "tags": {
+                "Name": "datanode04",
                 "Role": "datanode"
             }
         }
