@@ -4,18 +4,3 @@
   become: yes
   roles:
     - mount
-    - prep
-    - users
-    - ambari-agent
-
-- hosts: db_server
-  become_user: root
-  become: yes
-  roles:
-    - db-server
-
-- hosts: ambari_server
-  become_user: root
-  become: yes
-  roles:
-    - ambari-server

@@ -3,57 +3,57 @@
     "region": "eu-west-1",
     "availability_zone": "a",
     "subnet_id": "subnet-0b766860",
-    "ami_id" : "ami-33734044",
-    "instance_type": "m3.medium",
+    "ami_id" : "ami-edb9069e",
+    "instance_type": "m4.2xlarge",
     "security_groups": "hsbc-demo",
     "ssh_username": "centos",
     "keypair": "orenault",
     "ssh_private_key": "/Users/orenault/.ssh/orenault.pem",
     "ec2s": {
         "master01": {
-            "instance_type": "m3.medium",
+            "instance_type": "m4.2xlarge",
             "tags": {
                 "Name": "master01",
                 "Role": "master1"
             }
         },
         "master02": {
-            "instance_type": "m3.medium",
+            "instance_type": "m4.2xlarge",
             "tags": {
                 "Name": "master02",
                 "Role": "master2"
             }
         },
         "master03": {
-            "instance_type": "m3.medium",
+            "instance_type": "m4.2xlarge",
             "tags": {
                 "Name": "master03",
                 "Role": "master3"
             }
         },
         "datanode01": {
-            "instance_type": "m3.medium",
+            "instance_type": "m4.2xlarge",
             "tags": {
                 "Name": "datanode01",
                 "Role": "datanode"
             }
         },
         "datanode02": {
-            "instance_type": "m3.medium",
+            "instance_type": "m4.2xlarge",
             "tags": {
                 "Name": "datanode02",
                 "Role": "datanode"
             }
         },
         "datanode03": {
-            "instance_type": "m3.medium",
+            "instance_type": "m4.2xlarge",
             "tags": {
                 "Name": "datanode03",
                 "Role": "datanode"
             }
         },
         "datanode04": {
-            "instance_type": "m3.medium",
+            "instance_type": "m4.2xlarge",
             "tags": {
                 "Name": "datanode04",
                 "Role": "datanode"

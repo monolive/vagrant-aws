@@ -1,4 +1,17 @@
 ---
+  - name: Install epel repo
+    yum: name=https://dl.fedoraproject.org/pub/epel/epel-release-latest-6.noarch.rpm state=installed
+
+  - name: install required RPM
+    yum: name={{ item }} state=latest
+    with_items:
+      - xfsprogs
+      - cloud-utils-growpart
+
+  - name: grow root partition on AWS
+    shell: /usr/bin/growpart /dev/xvda 1
+    creates: /rootfs_extended
+
   - name: Format filesystem
     filesystem: fstype=xfs dev={{ item }}
     with_items: "{{ devices }}"
