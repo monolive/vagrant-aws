@@ -23,17 +23,8 @@
     with_indexed_items: "{{ devices }}"
 
   - name: restart machine
-    command: shutdown -r now "Ansible updates triggered"
+    command: shutdown -r now "restart instances for rootfs extension"
     async: 0
     poll: 0
     ignore_errors: true
-    when: reboot_required|changed
-
-  - name: waiting for server to come back
-    local_action: wait_for host={{ inventory_hostname }}
-                  state=started
-                  port=22
-                  delay=15
-                  timeout=600
-    become: false
     when: reboot_required|changed
