@@ -2,13 +2,23 @@
 # vi: set ft=ruby :
 
 groups = { 
-    "ambari_server" => ["master01"],
-    "master01" => ["master01"],
-    "master02" => ["master02"],
-    "master03" => ["master03"],
-    "db_server" => ["master03"],
-    "datanodes" => ["datanode01","datanode02","datanode03","datanode04"],
-    "all_groups:children" => ["master", "db_server","datanodes"]
+    "hdptest:children" => ["hdptest_datanode","hdptest_kdcmaster","hdptest_ambariserver","hdptest_mn01","hdptest_mn02","hdptest_mn03","hdptest_mysql","hdptest_openldap"],
+    "datanode:children" => ["hdptest_datanode"],
+    "kdcmaster:children" => ["hdptest_kdcmaster"],
+    "openldap:children" => ["hdptest_openldap"],
+    "ambariserver:children" => ["hdptest_ambariserver"],
+    "mn01:children" => ["hdptest_mn01"],
+    "mn02:children" => ["hdptest_mn02"],
+    "mysql:children" => ["hdptest_mysql"],
+
+    "hdptest_datanode" => ["datanode01","datanode02","datanode03","datanode04"],
+    "hdptest_openldap" => ["master03"],
+    "hdptest_kdcmaster" => ["master03"],
+    "hdptest_ambariserver" => ["master03"],
+    "hdptest_mysql" => ["master02"],
+    "hdptest_mn01" => ["master01"],
+    "hdptest_mn02" => ["master02"],
+    "hdptest_mn03" => ["master03"]
 }
 
 aws_cfg = (JSON.parse(File.read("aws_instance.json")))
