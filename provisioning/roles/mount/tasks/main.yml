@@ -1,30 +1,15 @@
 ---
-  - name: Install epel repo
-    yum: name=https://dl.fedoraproject.org/pub/epel/epel-release-latest-6.noarch.rpm state=installed
+  - name: check flag
+    stat: path=/tmp/ansible-ongoing
+    register: ongoing
 
-  - name: install required RPM
-    yum: name={{ item }} state=latest
-    with_items:
-      - xfsprogs
-      - cloud-utils-growpart
+  - name: set flag for vagrant to run ansible provisioner once
+    file: path=/tmp/ansible-ongoing state=touch
+    when: ongoing.stat.exists == false
 
-  - name: grow root partition on AWS
-    shell: /usr/bin/growpart /dev/xvda 1
-    args:
-      creates: /rootfs_extended
-    register: reboot_required
+  - include: mount.yml
+    when: ongoing.stat.exists == false
 
-  - name: Format filesystem
-    filesystem: fstype=xfs dev={{ item }}
-    with_items: "{{ devices }}"
-
-  - name: Mount disk
-    mount: name=/hadoop/{{ item.0 }} src={{ item.1 }} fstype=xfs opts=noatime state=mounted
-    with_indexed_items: "{{ devices }}"
-
-  - name: restart machine
-    command: shutdown -r now "restart instances for rootfs extension"
-    async: 0
-    poll: 0
-    ignore_errors: true
-    when: reboot_required|changed
+  - name: remove flag
+    file: path=/tmp/ansible-ongoing state=absent
+    

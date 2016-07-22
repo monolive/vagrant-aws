@@ -1,0 +1,36 @@
+---
+  - name: Install epel repo
+    yum: name=https://dl.fedoraproject.org/pub/epel/epel-release-latest-6.noarch.rpm state=installed
+
+  - name: install required RPM
+    yum: name={{ item }} state=latest
+    with_items:
+      - xfsprogs
+      - cloud-utils-growpart
+
+  - name: check if partition is already extended
+    shell: growpart -N /dev/xvda 1
+    register: grow
+    ignore_errors: true
+
+  - name: grow root partition on AWS
+    shell: /usr/bin/growpart /dev/xvda 1
+    args:
+      creates: /rootfs_extended
+    register: reboot_required
+    when: grow.rc == 0
+
+  - name: Format filesystem
+    filesystem: fstype=xfs dev={{ item }}
+    with_items: "{{ devices }}"
+
+  - name: Mount disk
+    mount: name=/hadoop/{{ item.0 }} src={{ item.1 }} fstype=xfs opts=noatime state=mounted
+    with_indexed_items: "{{ devices }}"
+
+  - name: restart machine
+    command: shutdown -r now "restart instances for rootfs extension"
+    async: 0
+    poll: 0
+    ignore_errors: true
+    when: reboot_required|changed
