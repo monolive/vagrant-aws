@@ -1,15 +1,8 @@
 ---
-  - name: check flag
-    stat: path=/tmp/ansible-ongoing
-    register: ongoing
-
-  - name: set flag for vagrant to run ansible provisioner once
-    file: path=/tmp/ansible-ongoing state=touch
-    when: ongoing.stat.exists == false
+  - name: check if disk already mounted
+    shell: mountpoint /hadoop/1
+    register: flag
 
   - include: mount.yml
-    when: ongoing.stat.exists == false
-
-  - name: remove flag
-    file: path=/tmp/ansible-ongoing state=absent
-    
+    with_items: ansible_mounts
+    when: flag.rc != 0
