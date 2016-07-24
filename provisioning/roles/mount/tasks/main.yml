@@ -2,6 +2,7 @@
   - name: check if disk already mounted
     shell: mountpoint /hadoop/1
     register: flag
+    ignore_errors: true
 
   - include: mount.yml
     with_items: ansible_mounts

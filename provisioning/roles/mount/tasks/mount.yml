@@ -8,17 +8,13 @@
       - xfsprogs
       - cloud-utils-growpart
 
-  - name: check if partition is already extended
-    shell: growpart -N /dev/xvda 1
-    register: grow
-    ignore_errors: true
-
   - name: grow root partition on AWS
     shell: /usr/bin/growpart /dev/xvda 1
     args:
       creates: /rootfs_extended
     register: reboot_required
-    when: grow.rc == 0
+    ignore_errors: true
+
 
   - name: Format filesystem
     filesystem: fstype=xfs dev={{ item }}
